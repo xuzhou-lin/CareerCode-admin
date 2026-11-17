@@ -1,0 +1,71 @@
+server:
+  # 后台独立端口，不占网关 8080
+  port: 8100
+
+spring:
+  application:
+    name: careercode-admin
+
+  # 两个数据源都在 DataSourceConfig 里手动装配，关掉 Druid 自动配置避免重复创建
+  datasource:
+    druid:
+      enabled: false
+
+    # 主数据源：后台自己的库（管理员、日志、审核记录、统计、敏感词）
+    admin:
+      url: jdbc:mysql://10.144.1.1:3305/careercode_admin?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      username: careercode
+      password: jpRBnvZ48QYVRKtQP8Ibu2aBJBwZC96YfhrmczjDa66oxrbYVB/mOTvV3qvTwb5SH5+yi4rRW8jfggH6F8p2TA==
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      validation-query: SELECT 1
+
+    # 业务库：只读内容、改状态字段。
+    # 默认连 careercode，其他库（careercode_post / careercode_social）在 SQL 里写全限定名，
+    # 这样不必为三个库各配一个数据源。
+    biz:
+      url: jdbc:mysql://10.144.1.1:3305/careercode?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      username: careercode
+      password: jpRBnvZ48QYVRKtQP8Ibu2aBJBwZC96YfhrmczjDa66oxrbYVB/mOTvV3qvTwb5SH5+yi4rRW8jfggH6F8p2TA==
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      validation-query: SELECT 1
+
+  data:
+    redis:
+      host: 10.144.1.1
+      port: 6379
+      # 管理端独立库，和 C 端 database 1 物理隔离，互相读不到对方的令牌
+      database: 2
+      password: Gb9cz5ey42k0uIOeBbR0lLrhk8Y2qHGc
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+
+sa-token:
+  # 独立请求头，C 端的 Authorization 打不进后台
+  token-name: Admin-Authorization
+  token-prefix: Bearer
+  # 后台会话 2 小时，比 C 端的 7 天短
+  timeout: 7200
+  is-read-body: false
+  is-log: false
+
+admin:
+  # 启动时若一条管理员记录都没有，自动建一个兜底账号；账号建好后这个开关不会重复触发
+  init-enabled: true
+  # 兜底账号的初始密码，生产环境用环境变量 ADMIN_INIT_PASSWORD 覆盖
+  init-password: Admin@123456
+
+logging:
+  level:
+    com.lxz.careercode.admin: info
